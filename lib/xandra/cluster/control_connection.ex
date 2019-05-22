@@ -110,7 +110,7 @@ defmodule Xandra.Cluster.ControlConnection do
   defp register_to_events(transport, socket) do
     payload =
       Frame.new(:register)
-      |> Protocol.encode_request(["STATUS_CHANGE"])
+      |> Protocol.encode_request(["STATUS_CHANGE", "TOPOLOGY_CHANGE"])
       |> Frame.encode()
 
     with :ok <- transport.send(socket, payload),
@@ -125,9 +125,9 @@ defmodule Xandra.Cluster.ControlConnection do
   defp report_event(%{cluster: cluster, buffer: buffer} = state) do
     case decode_frame(buffer) do
       {frame, rest} ->
-        status_change = Protocol.decode_response(frame)
-        Logger.debug("Received STATUS_CHANGE event: #{inspect(status_change)}")
-        Xandra.Cluster.update(cluster, status_change)
+        code_change = Protocol.decode_response(frame)
+        _ = Logger.debug("Received change event: #{inspect(change)}")
+        Xandra.Cluster.update(cluster, change)
         report_event(%{state | buffer: rest})
 
       :error ->
